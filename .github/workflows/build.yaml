@@ -23,7 +23,7 @@ jobs:
 
     - name: Clone ESP-IDF v5.4
       run: |
-        git clone --recursive https://github.com/espressif/esp-idf.git -b v5.4
+        git clone --depth 1 https://github.com/espressif/esp-idf.git -b v5.4
         cd esp-idf
         ./install.sh esp32s3
           
