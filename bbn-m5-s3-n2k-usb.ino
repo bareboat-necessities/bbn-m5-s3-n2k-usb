@@ -67,7 +67,7 @@ String can_state;
 void PollCANStatus() {
   // CAN controller registers are SJA1000 compatible.
   // Bus status value 0 indicates bus-on; value 1 indicates bus-off.
-  unsigned int bus_status = MODULE_CAN->SR.B.BS;
+  unsigned int bus_status = MODULE_TWAI->SR.B.BS;
 
   switch (bus_status) {
     case 0:
