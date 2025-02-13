@@ -160,24 +160,24 @@ void tNMEA2000_esp32::CAN_init(bool installIsr) {
   // A soft reset of the ESP32 leaves it's CAN controller in an undefined state so a reset is needed.
   // Reset CAN controller to same state as it would be in after a power down reset.
 #if defined CONFIG_IDF_TARGET_ESP32S2 || defined CONFIG_IDF_TARGET_ESP32S3
-	periph_module_reset(PERIPH_TWAI_MODULE);
-	//enable module
-        periph_module_enable(PERIPH_TWAI_MODULE);
+  periph_module_reset(PERIPH_TWAI_MODULE);
+  //enable module
+  periph_module_enable(PERIPH_TWAI_MODULE);
 #else
-	//enable module
-	periph_module_reset(PERIPH_CAN_MODULE);
-	DPORT_SET_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_CAN_CLK_EN);
-        DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_CAN_RST);
+  //enable module
+  periph_module_reset(PERIPH_CAN_MODULE);
+  DPORT_SET_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_CAN_CLK_EN);
+  DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_CAN_RST);
 #endif
 
   //configure RX pin
-gpio_set_direction(RxPin,GPIO_MODE_INPUT);
+  gpio_set_direction(RxPin,GPIO_MODE_INPUT);
 #if defined CONFIG_IDF_TARGET_ESP32S2 || defined CONFIG_IDF_TARGET_ESP32S3
-	gpio_matrix_in(RxPin,TWAI_RX_IDX,0);
+  gpio_matrix_in(RxPin,TWAI_RX_IDX,0);
 #else
-	gpio_matrix_in(RxPin,CAN_RX_IDX,0);
+  gpio_matrix_in(RxPin,CAN_RX_IDX,0);
 #endif
-	gpio_pad_select_gpio(RxPin);
+  gpio_pad_select_gpio(RxPin);
 
   //set to PELICAN mode
   MODULE_CAN->CDR.B.CAN_M = 0x1;
