@@ -32,6 +32,8 @@ jobs:
 
     - name: Make merged .bin
       run: >
+        find /home/runner -name esptool.py;
+        find /home/runner -name boot_app0.bin;
         ls -la /home/runner/;
         ls -l /home/runner/.arduino15/packages/esp32/tools/esptool_py/;
         python3 "$HOME/.arduino15/packages/esp32/tools/esptool_py/4.9.dev3/esptool.py" 
