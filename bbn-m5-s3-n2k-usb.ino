@@ -6,12 +6,6 @@
 
 // Based on: https://github.com/hatlabs/SH-ESP32-nmea2000-gateway/
 
-/*
-                                Apache License
-                           Version 2.0, January 2004
-                        http://www.apache.org/licenses/
-*/
-
 #include <M5AtomS3.h>
 #include <Arduino.h>
 
