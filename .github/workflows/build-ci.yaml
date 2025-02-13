@@ -64,6 +64,12 @@ jobs:
           0x8000 partition-table.bin \
           0x10000 bbn-m5-s3-n2k-usb.ino.bin
 
+      - name: Make zip
+        run: |
+          ls /home/runner/work/bbn-m5-s3-n2k-usb/bbn-m5-s3-n2k-usb/build/*.bin /home/runner/work/bbn-m5-s3-n2k-usb/bbn-m5-s3-n2k-usb/build/*.csv | zip bbn-m5-s3-n2k-usb_bin-$(date +%Y-%m-%d).zip -j -@
+          pwd
+          ls *.zip
+        
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
         with:
