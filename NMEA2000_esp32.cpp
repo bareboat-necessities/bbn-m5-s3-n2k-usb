@@ -179,9 +179,11 @@ void tNMEA2000_esp32::CAN_init(bool installIsr) {
 #endif
   gpio_pad_select_gpio(RxPin);
 
+#ifndef CONFIG_IDF_TARGET_ESP32S3
   //set to PELICAN mode
   MODULE_CAN->CDR.B.CAN_M = 0x1;
-
+#endif
+  
   //synchronization jump width is the same for all baud rates
   MODULE_CAN->BTR0.B.SJW = 0x1;
 
