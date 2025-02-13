@@ -39,9 +39,9 @@ static bool led_state = false;
 
 void ToggleLed() {
   if (led_state) {
-    M5.dis.drawpix(0, 0x0000ff);
+    AtomS3.Display.drawpix(0, 0x0000ff);
   } else {
-    M5.dis.drawpix(0, 0x000000);
+    AtomS3.Display.drawpix(0, 0x000000);
   }
   led_state = !led_state;
 }
