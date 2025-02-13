@@ -112,18 +112,18 @@ void setup() {
   nmea2000->SetProductInformation(
     "20230529",                 // Manufacturer's Model serial code (max 32 chars)
     103,                        // Manufacturer's product code
-    "M5Atom NMEA 2000 USB GW",  // Manufacturer's Model ID (max 33 chars)
+    "M5AtomS3 NMEA 2000 USB GW",  // Manufacturer's Model ID (max 33 chars)
     "0.1.0.0 (2021-03-31)",     // Manufacturer's Software version code (max 40 chars)
     "0.0.3.1 (2021-03-07)"      // Manufacturer's Model version (max 24 chars)
   );
   // Set device information
   nmea2000->SetDeviceInformation(
-    230529,  // Unique number. Use e.g. Serial number.
+    230539,  // Unique number. Use e.g. Serial number.
     130,     // Device function=Analog to NMEA 2000 Gateway. See codes on
              // http://www.nmea.org/Assets/20120726%20nmea%202000%20class%20&%20function%20codes%20v%202.00.pdf
     25,      // Device class=Inter/Intranetwork Device. See codes on
              // http://www.nmea.org/Assets/20120726%20nmea%202000%20class%20&%20function%20codes%20v%202.00.pdf
-    2046     // Just choosen free from code list on
+    2047     // Just choosen free from code list on
              // http://www.nmea.org/Assets/20121020%20nmea%202000%20registration%20list.pdf
   );
 
