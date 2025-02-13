@@ -1,12 +1,7 @@
 name: Build Arduino Sketch for M5Stack AtomS3 with ESP-IDF 5.4
 
-on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+name: build
+on: [push, pull_request]
 
 jobs:
   build:
