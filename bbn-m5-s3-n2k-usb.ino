@@ -9,8 +9,8 @@
 #include <M5AtomS3.h>
 #include <driver/twai.h>
 
-#define ESP32_CAN_TX_PIN 5  // Set CAN TX port to 5 for M5ATOM CANBUS
-#define ESP32_CAN_RX_PIN 6  // Set CAN RX port to 6 for M5ATOM CANBUS
+#define ESP32_CAN_TX_PIN GPIO5  // Set CAN TX port to 5 for M5ATOM CANBUS
+#define ESP32_CAN_RX_PIN GPIO6  // Set CAN RX port to 6 for M5ATOM CANBUS
 
 #define ARDUINO_USB_CDC_ON_BOOT 1
 
