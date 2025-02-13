@@ -1,4 +1,3 @@
-yaml
 name: Build Arduino Sketch for M5Stack AtomS3 with ESP-IDF 5.4
 
 on:
