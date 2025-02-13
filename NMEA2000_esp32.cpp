@@ -160,7 +160,9 @@ void tNMEA2000_esp32::CAN_init(bool installIsr) {
   // A soft reset of the ESP32 leaves it's CAN controller in an undefined state so a reset is needed.
   // Reset CAN controller to same state as it would be in after a power down reset.
 #if defined CONFIG_IDF_TARGET_ESP32S2 || defined CONFIG_IDF_TARGET_ESP32S3
-	periph_module_reset(PERIPH_USB_MODULE);
+	periph_module_reset(PERIPH_TWAI_MODULE);
+	//enable module
+        periph_module_enable(PERIPH_TWAI_MODULE);
 #else
 	periph_module_reset(PERIPH_CAN_MODULE);
 #endif
