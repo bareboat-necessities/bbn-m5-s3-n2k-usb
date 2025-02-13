@@ -56,21 +56,21 @@ jobs:
       - name: Compile Arduino sketch for AtomS3 (ESP32-S3) with Hardware CDC
         run: |
           export ARDUINO_IDE_PATH=~/arduino-esp32
-          export SKETCH_PATH=$GITHUB_WORKSPACE/YourSketchName.ino
+          export SKETCH_PATH=$GITHUB_WORKSPACE/bbn-m5-s3-n2k-usb
           cd $ARDUINO_IDE_PATH
           python3 tools/build.py -b esp32s3 -p $GITHUB_WORKSPACE --ide=arduino --build-property "build.usb_flags=-DARDUINO_USB_MODE=1 -DARDUINO_USB_CDC_ON_BOOT=1"
 
       - name: Merge binaries with esptool
         run: |
           cd $GITHUB_WORKSPACE/build
-          esptool.py --chip esp32s3 merge_bin -o merged_firmware.bin \
+          esptool.py --chip esp32s3 merge_bin -o bbn-m5-s3-n2k-usb_firmware.bin \
           --flash_mode dio --flash_freq 80m --flash_size 4MB \
           0x1000 bootloader.bin \
           0x8000 partition-table.bin \
-          0x10000 YourSketchName.ino.bin
+          0x10000 bbn-m5-s3-n2k-usb.ino.bin
 
       - name: Upload merged binary as artifact
         uses: actions/upload-artifact@v3
         with:
-          name: merged_firmware.bin
-          path: $GITHUB_WORKSPACE/build/merged_firmware.bin
+          name: bbn-m5-s3-n2k-usb_firmware.bin
+          path: $GITHUB_WORKSPACE/build/bbn-m5-s3-n2k-usb_firmware.bin
