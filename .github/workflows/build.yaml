@@ -36,8 +36,7 @@ jobs:
       run: |
         mkdir -p ~/arduino-esp32
         cd ~/arduino-esp32
-        git clone https://github.com/espressif/arduino-esp32.git .
-        git checkout 3.1.2
+        git clone --depth 1 -b 3.1.2 https://github.com/espressif/arduino-esp32.git .
         git submodule update --init --recursive
         cd tools
         python3 get.py
