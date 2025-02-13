@@ -14,8 +14,8 @@
 #include <Arduino.h>
 #include <Wire.h>
 
-#define ESP32_CAN_TX_PIN G5  // Set CAN TX port to 5 for M5ATOM CANBUS
-#define ESP32_CAN_RX_PIN G6  // Set CAN RX port to 6 for M5ATOM CANBUS
+#define ESP32_CAN_TX_PIN gpio_num_t(5)  // Set CAN TX port to 5 for M5ATOM CANBUS
+#define ESP32_CAN_RX_PIN gpio_num_t(6)  // Set CAN RX port to 6 for M5ATOM CANBUS
 
 #define CAN_TX_PIN ESP32_CAN_TX_PIN
 #define CAN_RX_PIN ESP32_CAN_RX_PIN
