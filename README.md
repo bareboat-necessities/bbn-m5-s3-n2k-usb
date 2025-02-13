@@ -48,5 +48,7 @@ TODO:
 ## Patches
 
 NMEA2000_esp32 forked from https://github.com/ttlappalainen/NMEA2000_esp32
-with some error handling additions
-based on https://www.esp32.com/viewtopic.php?t=5010
+with mod for TWAI driver (for esp32-S3)
+https://github.com/skarlsson/NMEA2000_twai
+
+
