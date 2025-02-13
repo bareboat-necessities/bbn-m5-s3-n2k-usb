@@ -15,8 +15,8 @@
 #include <M5AtomS3.h>
 #include <Arduino.h>
 
-#define ESP32_CAN_TX_PIN GPIO_NUM_22  // Set CAN TX port to 22 for M5ATOM CANBUS
-#define ESP32_CAN_RX_PIN GPIO_NUM_19  // Set CAN RX port to 19 for M5ATOM CANBUS
+#define ESP32_CAN_TX_PIN G22  // Set CAN TX port to 22 for M5ATOM CANBUS
+#define ESP32_CAN_RX_PIN G19  // Set CAN RX port to 19 for M5ATOM CANBUS
 
 #define CAN_TX_PIN ESP32_CAN_TX_PIN
 #define CAN_RX_PIN ESP32_CAN_RX_PIN
