@@ -23,8 +23,6 @@
 #include <ActisenseReader.h>
 #include "NMEA2000_esp32.h"
 #include <ReactESP.h>
-#include <esp_private/esp_int_wdt.h>
-#include <esp_private/esp_task_wdt.h>
 
 using namespace reactesp;
 
@@ -77,9 +75,7 @@ void PollCANStatus() {
       can_state = "BUS-OFF";
       // try to automatically recover by rebooting
       app.onDelay(2000, []() {
-        esp_task_wdt_init(1, true);
-        esp_task_wdt_add(NULL);
-        while (true) {}
+        ESP.restart();
       });
       break;
   }
