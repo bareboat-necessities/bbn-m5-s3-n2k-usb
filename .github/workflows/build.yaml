@@ -48,7 +48,6 @@ jobs:
           ref: master
           path: CustomLibrary_NMEA2000 # must contain string "Custom"
 
-
     - name: Compile Arduino sketch for AtomS3 (ESP32-S3) with Hardware CDC
       run: |
         export ARDUINO_IDE_PATH=~/arduino-esp32
