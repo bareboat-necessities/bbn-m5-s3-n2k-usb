@@ -1,405 +1,217 @@
-/*
-NMEA2000_esp32.cpp
-
-Copyright (c) 2015-2020 Timo Lappalainen, Kave Oy, www.kave.fi
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of
-this software and associated documentation files (the "Software"), to deal in
-the Software without restriction, including without limitation the rights to use,
-copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the
-Software, and to permit persons to whom the Software is furnished to do so,
-subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
-INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
-PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
-HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
-CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
-OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-Inherited NMEA2000 object for ESP32 modules. See also NMEA2000 library.
-
-Thanks to Thomas Barth, barth-dev.de, who has written ESP32 CAN code. To avoid extra
-libraries, I implemented his code directly to the NMEA2000_esp32 to avoid extra
-can.h library, which may cause even naming problem.
-*/
-
-#include "driver/periph_ctrl.h"
-
-#include "soc/dport_reg.h"
 #include "NMEA2000_esp32.h"
+#include "esp_log.h"
 
-//time to reinit CAN bus if the queue is full for that time
-#define SEND_CANCEL_TIME 2000
-//reinit CAN bis if nothing send/received within this time
-#define RECEIVE_REINIT_TIME 60000
+#define TAG "NMEA2000_esp32"
 
-bool tNMEA2000_esp32::CanInUse = false;
-tNMEA2000_esp32 *pNMEA2000_esp32 = 0;
-
-void ESP32Can1Interrupt(void *);
-
-#define ECDEBUG(fmt, args...) \
-  if (debugStream) { debugStream->printf(fmt, ##args); }
-
-//*****************************************************************************
-tNMEA2000_esp32::tNMEA2000_esp32(gpio_num_t _TxPin,
-                                 gpio_num_t _RxPin,
-                                 Print *dbg)
-  : tNMEA2000(), IsOpen(false),
-    speed(CAN_SPEED_250KBPS), TxPin(_TxPin), RxPin(_RxPin),
-    RxQueue(NULL), TxQueue(NULL) {
-  debugStream = dbg;
-}
-//*****************************************************************************
-bool tNMEA2000_esp32::CANSendFrame(unsigned long id, unsigned char len, const unsigned char *buf, bool /*wait_sent*/) {
-  tCANFrame frame;
-  unsigned long now = millis();
-  if (uxQueueSpacesAvailable(TxQueue) == 0) {
-    if (lastSend && (lastSend + SEND_CANCEL_TIME) < now) {
-      ECDEBUG("CanSendFrame Aborting and emptying queue\n");
-      while (xQueueReceive(TxQueue, &frame, 0)) {}
-      errReinit++;
-      CAN_init(false);
-      if (uxQueueSpacesAvailable(TxQueue) == 0) return false;
-    } else {
-      ECDEBUG("CanSendFrame queue full\n");
-      return false;  // can not send to queue
-    }
-  }
-  lastSend = now;
-  frame.id = id;
-  frame.len = len > 8 ? 8 : len;
-  memcpy(frame.buf, buf, len);
-  CheckBusOff();
-  ECDEBUG("CanSendFrame IntrCnt  %d\n", cntIntr);
-  ECDEBUG("CanSendFrame Error TX/RX %d/%d\n", MODULE_CAN->TXERR.U, MODULE_CAN->RXERR.U);
-  ECDEBUG("CanSendFrame Error Overrun %d\n", errOverrun);
-  ECDEBUG("CanSendFrame Error Arbitration %d\n", errArb);
-  ECDEBUG("CanSendFrame Error Bus %d\n", errBus);
-  ECDEBUG("CanSendFrame Error Recovery %d\n", errRecovery);
-  ECDEBUG("CanSendFrame ErrorCount %d\n", errCountTxInternal);
-  ECDEBUG("CanSendFrame ErrorCancel %d\n", errCancelTransmit);
-  ECDEBUG("CanSendFrame ErrorReinit %d\n", errReinit);
-  ECDEBUG("CanSendFrame busOff=%d, errPassive=%d\n", MODULE_CAN->SR.B.BS, MODULE_CAN->SR.B.ES)
-  xQueueSendToBack(TxQueue, &frame, 0);  // Add frame to queue
-  if (MODULE_CAN->SR.B.TBS == 0) {
-    ECDEBUG("CanSendFrame: wait for ISR to send %d\n", frame.id);
-    return true;  // Currently sending, ISR takes care of sending
-  }
-
-  if (MODULE_CAN->SR.B.TBS == 1) {  // Check again and restart send, if is not going on
-    xQueueReceive(TxQueue, &frame, 0);
-    ECDEBUG("CanSendFrame: send direct %d\n", frame.id);
-    CAN_send_frame(frame);
-    //return MODULE_CAN->TXERR.U < 127;
-  }
-
-  return true;
-}
-
-//*****************************************************************************
-void tNMEA2000_esp32::InitCANFrameBuffers() {
-  if (MaxCANReceiveFrames < 10) MaxCANReceiveFrames = 50;  // ESP32 has plenty of RAM
-  if (MaxCANSendFrames < 10) MaxCANSendFrames = 40;
-  uint16_t CANGlobalBufSize = MaxCANSendFrames - 4;
-  MaxCANSendFrames = 4;  // we do not need much libary internal buffer since driver has them.
-  RxQueue = xQueueCreate(MaxCANReceiveFrames, sizeof(tCANFrame));
-  TxQueue = xQueueCreate(CANGlobalBufSize, sizeof(tCANFrame));
-
-  tNMEA2000::InitCANFrameBuffers();  // call main initialization
-}
-
-//*****************************************************************************
-bool tNMEA2000_esp32::CANOpen() {
-  if (IsOpen) return true;
-
-  if (CanInUse) return false;  // currently prevent accidental second instance. Maybe possible in future.
-
-  pNMEA2000_esp32 = this;
-  IsOpen = true;
-  CAN_init();
-
-  CanInUse = IsOpen;
-
-  return IsOpen;
-}
-
-//*****************************************************************************
-bool tNMEA2000_esp32::CANGetFrame(unsigned long &id, unsigned char &len, unsigned char *buf) {
-  bool HasFrame = false;
-  tCANFrame frame;
-  CheckBusOff();
-  unsigned long now = millis();
-  //receive next CAN frame from queue
-  if (xQueueReceive(RxQueue, &frame, 0) == pdTRUE) {
-    HasFrame = true;
-    id = frame.id;
-    len = frame.len;
-    memcpy(buf, frame.buf, frame.len);
-    lastReceive = now;
-  } else {
-    if (lastReceive != 0 && (lastReceive + RECEIVE_REINIT_TIME) < now && (lastSend + RECEIVE_REINIT_TIME) < now) {
-      ECDEBUG("Noting received within %d ms, reinit", RECEIVE_REINIT_TIME);
-      CAN_init(false);
-    }
-  }
-
-  return HasFrame;
-}
-
-//*****************************************************************************
-void tNMEA2000_esp32::CAN_init(bool installIsr) {
-
-  //Time quantum
-  double __tq;
-
-  // A soft reset of the ESP32 leaves it's CAN controller in an undefined state so a reset is needed.
-  // Reset CAN controller to same state as it would be in after a power down reset.
-#if defined CONFIG_IDF_TARGET_ESP32S2 || defined CONFIG_IDF_TARGET_ESP32S3
-  periph_module_reset(PERIPH_TWAI_MODULE);
-  //enable module
-  periph_module_enable(PERIPH_TWAI_MODULE);
-#else
-  //enable module
-  periph_module_reset(PERIPH_CAN_MODULE);
-  DPORT_SET_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_CAN_CLK_EN);
-  DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_CAN_RST);
-#endif
-
-  //configure RX pin
-  gpio_set_direction(RxPin,GPIO_MODE_INPUT);
-#if defined CONFIG_IDF_TARGET_ESP32S2 || defined CONFIG_IDF_TARGET_ESP32S3
-  gpio_matrix_in(RxPin,TWAI_RX_IDX,0);
-#else
-  gpio_matrix_in(RxPin,CAN_RX_IDX,0);
-#endif
-  gpio_pad_select_gpio(RxPin);
-
-#ifndef CONFIG_IDF_TARGET_ESP32S3
-  //set to PELICAN mode
-  MODULE_CAN->CDR.B.CAN_M = 0x1;
-#endif
-  
-  //synchronization jump width is the same for all baud rates
-  MODULE_CAN->BTR0.B.SJW = 0x1;
-
-  //TSEG2 is the same for all baud rates
-  MODULE_CAN->BTR1.B.TSEG2 = 0x1;
-
-  //select time quantum and set TSEG1
-  switch (speed) {
-    case CAN_SPEED_1000KBPS:
-      MODULE_CAN->BTR1.B.TSEG1 = 0x4;
-      __tq = 0.125;
-      break;
-
-    case CAN_SPEED_800KBPS:
-      MODULE_CAN->BTR1.B.TSEG1 = 0x6;
-      __tq = 0.125;
-      break;
+tNMEA2000_esp32::tNMEA2000_esp32(
+    gpio_num_t TxPin,
+    gpio_num_t RxPin,
+    int twai_controller_id,
+    CAN_speed_t can_speed) : tNMEA2000(),
+                             is_open_(false),
+                             error_monitor_task_handle_(nullptr),
+                             should_stop_error_monitor_(false)
+{
+    switch (can_speed)
+    {
+    case CAN_speed_t::CAN_SPEED_25KBPS:
+        t_config_ = TWAI_TIMING_CONFIG_25KBITS();
+        break;
+    case CAN_speed_t::CAN_SPEED_50KBPS:
+        t_config_ = TWAI_TIMING_CONFIG_50KBITS();
+        break;
+    case CAN_speed_t::CAN_SPEED_100KBPS:
+        t_config_ = TWAI_TIMING_CONFIG_100KBITS();
+        break;
+    case CAN_speed_t::CAN_SPEED_125KBPS:
+        t_config_ = TWAI_TIMING_CONFIG_125KBITS();
+        break;
+    case CAN_speed_t::CAN_SPEED_250KBPS:
+        t_config_ = TWAI_TIMING_CONFIG_250KBITS();
+        break;
+    case CAN_speed_t::CAN_SPEED_500KBPS:
+        t_config_ = TWAI_TIMING_CONFIG_500KBITS();
+        break;
+    case CAN_speed_t::CAN_SPEED_1000KBPS:
+        t_config_ = TWAI_TIMING_CONFIG_1MBITS();
+        break;
     default:
-      MODULE_CAN->BTR1.B.TSEG1 = 0xc;
-      __tq = ((float)1000 / speed) / 16;
-  }
+        t_config_ = TWAI_TIMING_CONFIG_250KBITS();
+    }
+    f_config_ = TWAI_FILTER_CONFIG_ACCEPT_ALL();
+    g_config_ = TWAI_GENERAL_CONFIG_DEFAULT(TxPin, RxPin, TWAI_MODE_NORMAL);
+    g_config_.controller_id = twai_controller_id;
+    g_config_.tx_queue_len = 40;
+    g_config_.rx_queue_len = 40;
 
-  //set baud rate prescaler
-  MODULE_CAN->BTR0.B.BRP = (uint8_t)round((((APB_CLK_FREQ * __tq) / 2) - 1) / 1000000) - 1;
-
-  /* Set sampling
-     * 1 -> triple; the bus is sampled three times; recommended for low/medium speed buses     (class A and B) where filtering spikes on the bus line is beneficial
-     * 0 -> single; the bus is sampled once; recommended for high speed buses (SAE class C)*/
-  MODULE_CAN->BTR1.B.SAM = 0x1;
-
-  //enable all interrupts
-  MODULE_CAN->IER.U = 0xef;  // bit 0x10 contains Baud Rate Prescaler Divider (BRP_DIV) bit
-
-  //no acceptance filtering, as we want to fetch all messages
-  MODULE_CAN->MBX_CTRL.ACC.CODE[0] = 0;
-  MODULE_CAN->MBX_CTRL.ACC.CODE[1] = 0;
-  MODULE_CAN->MBX_CTRL.ACC.CODE[2] = 0;
-  MODULE_CAN->MBX_CTRL.ACC.CODE[3] = 0;
-  MODULE_CAN->MBX_CTRL.ACC.MASK[0] = 0xff;
-  MODULE_CAN->MBX_CTRL.ACC.MASK[1] = 0xff;
-  MODULE_CAN->MBX_CTRL.ACC.MASK[2] = 0xff;
-  MODULE_CAN->MBX_CTRL.ACC.MASK[3] = 0xff;
-
-  //set to normal mode
-  MODULE_CAN->OCR.B.OCMODE = __CAN_OC_NOM;
-
-  //clear error counters
-  MODULE_CAN->TXERR.U = 0;
-  MODULE_CAN->RXERR.U = 0;
-  (void)MODULE_CAN->ECC;
-
-  //clear interrupt flags
-  (void)MODULE_CAN->IR.U;
-
-  //install CAN ISR
-  if (installIsr) 
-#if defined CONFIG_IDF_TARGET_ESP32S2 || defined CONFIG_IDF_TARGET_ESP32S3
-    esp_intr_alloc(ETS_MAX_INTR_SOURCE,0,ESP32Can1Interrupt,NULL,NULL);
+    // should be set using menuconfig - otherwise bad things happen when trying ota over can
+#ifdef CONFIG_TWAI_ISR_IN_IRAM
+    g_config_.intr_flags = ESP_INTR_FLAG_IRAM;
 #else
-    esp_intr_alloc(ETS_CAN_INTR_SOURCE,0,ESP32Can1Interrupt,NULL,NULL);
+    #warning "CONFIG_TWAI_ISR_IN_IRAM not set in menuconfig"
 #endif
-
-  //configure TX pin
-  // We do late configure, since some initialization above caused CAN Tx flash
-  // shortly causing one error frame on startup. By setting CAN pin here
-  // it works right.
-  gpio_set_direction(TxPin, GPIO_MODE_OUTPUT);
-#if defined CONFIG_IDF_TARGET_ESP32S2 || defined CONFIG_IDF_TARGET_ESP32S3
-  gpio_matrix_out(TxPin,TWAI_TX_IDX,0,0);
-#else
-  gpio_matrix_out(TxPin,CAN_TX_IDX,0,0);
-#endif
-  gpio_pad_select_gpio(TxPin);
-
-  //Showtime. Release Reset Mode.
-  MODULE_CAN->MOD.B.RM = 0;
 }
 
-//*****************************************************************************
-void tNMEA2000_esp32::CAN_read_frame() {
-  tCANFrame frame;
-  CAN_FIR_t FIR;
+tNMEA2000_esp32::~tNMEA2000_esp32()
+{
+    should_stop_error_monitor_ = true;
+    if (error_monitor_task_handle_ != nullptr)
+    {
+        vTaskDelete(error_monitor_task_handle_);
+    }
+    CAN_deinit();
+}
 
-  //get FIR
-  FIR.U = MODULE_CAN->MBX_CTRL.FCTRL.FIR.U;
-  frame.len = FIR.B.DLC > 8 ? 8 : FIR.B.DLC;
+void tNMEA2000_esp32::SetCANBufferSize(uint16_t RxBufferSize, uint16_t TxBufferSize)
+{
+    g_config_.rx_queue_len = RxBufferSize;
+    g_config_.tx_queue_len = TxBufferSize;
+}
 
-  // Handle only extended frames
-  if (FIR.B.FF == CAN_frame_ext) {  //extended frame
-    //Get Message ID
-    frame.id = _CAN_GET_EXT_ID;
+void tNMEA2000_esp32::InitCANFrameBuffers()
+{
+    // Set default buffer sizes if not set by user
+    if (g_config_.rx_queue_len == 0) g_config_.rx_queue_len = 50;
+    if (g_config_.tx_queue_len == 0) g_config_.tx_queue_len = 40;
 
-    //deep copy data bytes
-    for (size_t i = 0; i < frame.len; i++) {
-      frame.buf[i] = MODULE_CAN->MBX_CTRL.FCTRL.TX_RX.EXT.data[i];
+    tNMEA2000::InitCANFrameBuffers();
+}
+
+bool tNMEA2000_esp32::CANOpen()
+{
+    if (is_open_) return true;
+    CAN_init();
+    //is_open_ = true;
+    xTaskCreate(errorMonitorTask, "TWAI_errMonitor", 4096, this, 5, &error_monitor_task_handle_);
+    return true;
+}
+
+void tNMEA2000_esp32::CAN_init()
+{
+    ESP_LOGI(TAG, "Initializing TWAI driver");
+    esp_err_t result = twai_driver_install_v2(&g_config_, &t_config_, &f_config_, &twai_handle_);
+    if (result == ESP_OK)
+    {
+        result = twai_start_v2(twai_handle_);
+        if (result == ESP_OK)
+        {
+            ESP_LOGI(TAG, "TWAI driver started successfully");
+            is_open_ = true;
+        }
+        else
+        {
+            ESP_LOGE(TAG, "Failed to start TWAI driver: %s", esp_err_to_name(result));
+        }
+    }
+    else
+    {
+        ESP_LOGE(TAG, "Failed to install TWAI driver: %s", esp_err_to_name(result));
+    }
+}
+
+void tNMEA2000_esp32::CAN_deinit()
+{
+    if (is_open_)
+    {
+        ESP_LOGI(TAG, "Stopping TWAI driver");
+        twai_stop_v2(twai_handle_);
+        twai_driver_uninstall_v2(twai_handle_);
+        is_open_ = false;
+    }
+}
+
+bool tNMEA2000_esp32::CANSendFrame(unsigned long id, unsigned char len, const unsigned char* buf, bool wait_sent)
+{
+    if (!is_open_) {
+        ESP_LOGI(TAG, "CANSendFrame - not open...");
+        return false;
     }
 
-    //send frame to input queue
-    xQueueSendToBackFromISR(RxQueue, &frame, 0);
-  }
-
-  //Let the hardware know the frame has been read.
-  MODULE_CAN->CMR.B.RRB = 1;
-}
-
-//*****************************************************************************
-void tNMEA2000_esp32::CAN_send_frame(tCANFrame &frame) {
-  CAN_FIR_t FIR;
-
-  FIR.U = 0;
-  FIR.B.DLC = frame.len > 8 ? 8 : frame.len;
-  FIR.B.FF = CAN_frame_ext;
-
-  //copy frame information record
-  MODULE_CAN->MBX_CTRL.FCTRL.FIR.U = FIR.U;
-
-  //Write message ID
-  _CAN_SET_EXT_ID(frame.id);
-
-  // Copy the frame data to the hardware
-  for (size_t i = 0; i < frame.len; i++) {
-    MODULE_CAN->MBX_CTRL.FCTRL.TX_RX.EXT.data[i] = frame.buf[i];
-  }
-
-  // Transmit frame
-  MODULE_CAN->CMR.B.TR = 1;
-}
-#define CAN_MAX_TX_RETRY 12
-#define RECOVERY_RETRY_MS 1000
-void tNMEA2000_esp32::CAN_bus_off_recovery() {
-  unsigned long now = millis();
-  if (recoveryStarted && (recoveryStarted + RECOVERY_RETRY_MS) > now) return;
-  ECDEBUG("CAN_bus_off_recovery started\n");
-  recoveryStarted = now;
-  errRecovery++;
-  MODULE_CAN->CMR.B.AT = 1;  // abort transmission
-  (void)MODULE_CAN->SR.U;
-  MODULE_CAN->TXERR.U = 127;
-  MODULE_CAN->RXERR.U = 0;
-  MODULE_CAN->MOD.B.RM = 0;
-}
-
-void tNMEA2000_esp32::CheckBusOff() {
-  //should we really recover here?
-  if (MODULE_CAN->SR.B.BS) {
-    ECDEBUG("Bus off detected, trying recovery\n");
-    CAN_bus_off_recovery();
-  }
-}
-
-//*****************************************************************************
-void tNMEA2000_esp32::InterruptHandler() {
-  //Interrupt flag buffer
-  cntIntr++;
-  uint32_t interrupt;
-
-  // Read interrupt status and clear flags
-  interrupt = (MODULE_CAN->IR.U & 0xff);
-
-  // Handle TX complete interrupt
-  //see http://uglyduck.vajn.icu/PDF/wireless/Espressif/ESP32/Eco_and_Workarounds_for_Bugs_in_ESP32.pdf, 3.13.4
-  if ((interrupt & __CAN_IRQ_TX) != 0 || MODULE_CAN->SR.B.TBS) {
-    tCANFrame frame;
-    if ((xQueueReceiveFromISR(TxQueue, &frame, NULL) == pdTRUE)) {
-      CAN_send_frame(frame);
+    twai_message_t message = {
+        //        .extd = 1,
+        //        .rtr = 0,
+        //        .ss = 0,
+        //        .self = 0,
+        //        .dlc_non_comp = 0,
+        //        .reserved = 0,
+        // some compilers cant cope with union->struct above, setting the 32 bit flags directly below.
+        .flags = 0x01,
+        .identifier = id,
+        .data_length_code = static_cast<uint8_t>(len > 8 ? 8 : len),
+        .data = {0}
+    };
+    memcpy(message.data, buf, message.data_length_code);
+    //todo this could use some love when doing microsleep
+    esp_err_t result = twai_transmit_v2(twai_handle_, &message, wait_sent ? pdMS_TO_TICKS(100) : 0);
+    if (result != ESP_OK)
+    {
+        //ESP_LOGE(TAG, "Failed to transmit message: %s", esp_err_to_name(result));
     }
-  }
-
-  // Handle RX frame available interrupt
-  if ((interrupt & __CAN_IRQ_RX) != 0) {
-    CAN_read_frame();
-  }
-
-  // Handle error interrupts.
-  if ((interrupt & (__CAN_IRQ_ERR						//0x4
-                  | __CAN_IRQ_DATA_OVERRUN	//0x8
-#ifndef CONFIG_IDF_TARGET_ESP32S3
-                  | __CAN_IRQ_WAKEUP				//0x10
-#endif
-                  | __CAN_IRQ_ERR_PASSIVE		//0x20
-                  | __CAN_IRQ_ARB_LOST			//0x40
-                  | __CAN_IRQ_BUS_ERR				//0x80
-#ifdef CONFIG_IDF_TARGET_ESP32S3
-                  | __CAN_IRQ_MS_ERR 				//0x100
-#endif
-    )) != 0) {
-    /*handler*/
-  }
-  //https://www.esp32.com/viewtopic.php?t=5010
-  // Handle error interrupts.
-  if (interrupt & __CAN_IRQ_DATA_OVERRUN) {  //0x08
-    errOverrun++;
-    MODULE_CAN->CMR.B.CDO = 1;
-    (void)MODULE_CAN->SR.U;  // read SR after write to CMR to settle register changes
-  }
-  if (interrupt & __CAN_IRQ_ARB_LOST) {  //0x40
-    errArb++;
-    (void)MODULE_CAN->ALC.U;  // must be read to re-enable interrupt
-    errCountTxInternal++;
-  }
-  if (interrupt & __CAN_IRQ_BUS_ERR) {  //0x80
-    errBus++;
-    (void)MODULE_CAN->ECC.U;  // must be read to re-enable interrupt
-    errCountTxInternal += 2;
-  }
-  if (MODULE_CAN->TXERR.U == 0) {
-    recoveryStarted = 0;
-  }
-  if (errCountTxInternal >= 2 * CAN_MAX_TX_RETRY) {
-    MODULE_CAN->CMR.B.AT = 1;  // abort transmission
-    (void)MODULE_CAN->SR.U;
-    errCountTxInternal = 0;
-  }
+    return (result == ESP_OK);
 }
 
-//*****************************************************************************
-void ESP32Can1Interrupt(void *) {
-  pNMEA2000_esp32->InterruptHandler();
+bool tNMEA2000_esp32::CANGetFrame(unsigned long& id, unsigned char& len, unsigned char* buf)
+{
+    if (!is_open_) {
+        ESP_LOGI(TAG, "CANGetFrame - not open...");
+        return false;
+    }
+    twai_message_t message;
+    if (twai_receive_v2(twai_handle_, &message, 0) == ESP_OK)
+    {
+        id = message.identifier;
+        len = message.data_length_code;
+        memcpy(buf, message.data, len);
+        return true;
+    }
+    return false;
+}
+
+void tNMEA2000_esp32::errorMonitorTask(void* pvParameters)
+{
+    auto* instance = static_cast<tNMEA2000_esp32*>(pvParameters);
+    twai_status_info_t status_info;
+
+    // Timestamps for last logged messages (in milliseconds)
+    uint32_t last_busoff_log = 0;
+    uint32_t last_highcounter_log = 0;
+    const uint32_t LOG_INTERVAL = 60000; // 1 minute in milliseconds
+
+    while (!instance->should_stop_error_monitor_)
+    {
+        uint32_t current_time = pdTICKS_TO_MS(xTaskGetTickCount());
+
+        if (twai_get_status_info_v2(instance->twai_handle_, &status_info) == ESP_OK)
+        {
+            if (status_info.state == TWAI_STATE_BUS_OFF)
+            {
+                if (current_time - last_busoff_log >= LOG_INTERVAL)
+                {
+                    ESP_LOGE(TAG, "Bus-off condition detected");
+                    last_busoff_log = current_time;
+                }
+                instance->handleBusError();
+            }
+            else if (status_info.tx_error_counter > 127 || status_info.rx_error_counter > 127)
+            {
+                if (current_time - last_highcounter_log >= LOG_INTERVAL)
+                {
+                    ESP_LOGW(TAG, "High error counters detected: TX=%ld, RX=%ld",
+                             status_info.tx_error_counter, status_info.rx_error_counter);
+                    last_highcounter_log = current_time;
+                }
+            }
+        }
+        vTaskDelay(pdMS_TO_TICKS(1000)); // Check every second
+    }
+
+    vTaskDelete(nullptr);
+}
+
+void tNMEA2000_esp32::handleBusError()
+{
+    ESP_LOGI(TAG, "Handling bus error: Reinitializing TWAI driver");
+    CAN_deinit();
+    vTaskDelay(pdMS_TO_TICKS(1000)); // Wait for 1 second before reinitializing
+    CAN_init();
 }
