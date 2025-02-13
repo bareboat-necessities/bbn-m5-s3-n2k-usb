@@ -358,14 +358,18 @@ void tNMEA2000_esp32::InterruptHandler() {
   }
 
   // Handle error interrupts.
-  if ((interrupt & (__CAN_IRQ_ERR  //0x4
-
-                    | __CAN_IRQ_WAKEUP       //0x10
-                    | __CAN_IRQ_ERR_PASSIVE  //0x20
-
-
-                    ))
-      != 0) {
+  if ((interrupt & (__CAN_IRQ_ERR						//0x4
+                  | __CAN_IRQ_DATA_OVERRUN	//0x8
+#ifndef CONFIG_IDF_TARGET_ESP32S3
+                  | __CAN_IRQ_WAKEUP				//0x10
+#endif
+                  | __CAN_IRQ_ERR_PASSIVE		//0x20
+                  | __CAN_IRQ_ARB_LOST			//0x40
+                  | __CAN_IRQ_BUS_ERR				//0x80
+#ifdef CONFIG_IDF_TARGET_ESP32S3
+                  | __CAN_IRQ_MS_ERR 				//0x100
+#endif
+    )) != 0) {
     /*handler*/
   }
   //https://www.esp32.com/viewtopic.php?t=5010
