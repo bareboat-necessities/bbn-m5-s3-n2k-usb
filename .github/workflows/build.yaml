@@ -30,6 +30,14 @@ jobs:
         extra-arduino-cli-args: "--warnings default --build-property compiler.libraries.ldflags=-Wl,--allow-multiple-definition "
         set-build-path: true
 
+    - name: Install ESP-IDF
+      run: |
+        mkdir -p ~/esp
+        cd ~/esp
+        git clone -b v5.4 --recursive https://github.com/espressif/esp-idf.git
+        cd ~/esp/esp-idf
+        ./install.sh esp32s3
+
     - name: Find versions
       run: |
         find /home/runner -name esptool\*
