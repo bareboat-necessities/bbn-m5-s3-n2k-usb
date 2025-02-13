@@ -69,8 +69,11 @@ jobs:
           0x8000 partition-table.bin \
           0x10000 bbn-m5-s3-n2k-usb.ino.bin
 
-      - name: Upload merged binary as artifact
-        uses: actions/upload-artifact@v3
+      - name: Upload binaries to release
+        uses: svenstaro/upload-release-action@v2
         with:
-          name: bbn-m5-s3-n2k-usb_firmware.bin
-          path: $GITHUB_WORKSPACE/build/bbn-m5-s3-n2k-usb_firmware.bin
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: bbn-m5-s3-n2k-usb_bin*.zip
+          tag: ${{ github.ref == 'refs/heads/main' && 'vTest' || github.ref }}
+          overwrite: true
+          file_glob: true
