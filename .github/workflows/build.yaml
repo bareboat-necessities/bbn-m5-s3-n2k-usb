@@ -20,6 +20,27 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y git wget flex bison gperf python3 python3-pip python3-setuptools cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0
+
+    - name: Clone ESP-IDF v5.4
+      run: |
+        git clone --recursive https://github.com/espressif/esp-idf.git -b v5.4
+        cd esp-idf
+        ./install.sh
+          
+    - name: Set up ESP-IDF environment
+      run: |
+        cd esp-idf
+        . ./export.sh
+
+    - name: Install Arduino ESP32 core (version 3.1.2)
+      run: |
+        mkdir -p ~/arduino-esp32
+        cd ~/arduino-esp32
+        git clone https://github.com/espressif/arduino-esp32.git .
+        git checkout 3.1.2
+        git submodule update --init --recursive
+        cd tools
+        python3 get.py
           
     - name: Checkout NMEA2000 library
       uses: actions/checkout@v4
@@ -39,14 +60,6 @@ jobs:
         sketch-names-find-start: bbn-*
         extra-arduino-cli-args: "--warnings default --build-property compiler.libraries.ldflags=-Wl,--allow-multiple-definition "
         set-build-path: true
-
-    - name: Install ESP-IDF
-      run: |
-        mkdir -p ~/esp
-        cd ~/esp
-        git clone -b v5.4 --recursive https://github.com/espressif/esp-idf.git
-        cd ~/esp/esp-idf
-        ./install.sh esp32s3
 
     - name: Find versions
       run: |
