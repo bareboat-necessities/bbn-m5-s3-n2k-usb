@@ -158,5 +158,6 @@ void setup() {
 }
 
 void loop() {
+  AtomS3.update();
   app.tick();
 }
