@@ -25,7 +25,7 @@ jobs:
       run: |
         git clone --recursive https://github.com/espressif/esp-idf.git -b v5.4
         cd esp-idf
-        ./install.sh
+        ./install.sh esp32s3
           
     - name: Set up ESP-IDF environment
       run: |
