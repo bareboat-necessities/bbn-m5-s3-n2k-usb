@@ -60,27 +60,6 @@ void HandleStreamActisenseMsg(const tN2kMsg &message) {
   nmea2000->SendMsg(message);
 }
 
-String can_state;
-
-void PollCANStatus() {
-  // CAN controller registers are SJA1000 compatible.
-  // Bus status value 0 indicates bus-on; value 1 indicates bus-off.
-  unsigned int bus_status = MODULE_TWAI->SR.B.BS;
-
-  switch (bus_status) {
-    case 0:
-      can_state = "RUNNING";
-      break;
-    case 1:
-      can_state = "BUS-OFF";
-      // try to automatically recover by rebooting
-      app.onDelay(2000, []() {
-        ESP.restart();
-      });
-      break;
-  }
-}
-
 void setup() {
   auto cfg = M5.config();
   AtomS3.begin(cfg);
@@ -138,11 +117,6 @@ void setup() {
   app.onRepeat(1, []() {
     nmea2000->ParseMessages();
     actisense_reader.ParseMessages();
-  });
-
-  // enable CAN status polling
-  app.onRepeat(100, []() {
-    PollCANStatus();
   });
 
   delay(100);
