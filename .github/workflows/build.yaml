@@ -68,14 +68,15 @@ jobs:
         ls -l /home/runner/.arduino15/packages/esp32/tools/esptool_py/*
 
     - name: Make merged .bin
-      run: >
-        python3 /home/runner/.espressif/python_env/idf5.4_py3.12_env/bin/esptool.py 
-        --chip esp32s3 merge_bin -o $HOME/work/bbn-m5-s3-n2k-usb/bbn-m5-s3-n2k-usb/build/bbn-m5-s3-n2k-usb_firmware.bin 
+      run: |
+        cd $GITHUB_WORKSPACE/build
+        esptool.py \
+        --chip esp32s3 merge_bin -o bbn-m5-s3-n2k-usb_firmware.bin \
         --flash_mode dio --flash_freq 80m --flash_size 4MB 
-        0x0 "$HOME/work/bbn-m5-s3-n2k-usb/bbn-m5-s3-n2k-usb/build/bbn-m5-s3-n2k-usb.ino.bootloader.bin" 
-        0x8000 "$HOME/work/bbn-m5-s3-n2k-usb/bbn-m5-s3-n2k-usb/build/bbn-m5-s3-n2k-usb.ino.partitions.bin" 
-        0xe000 "$HOME/.arduino15/packages/esp32/hardware/esp32/3.1.2/tools/partitions/boot_app0.bin" 
-        0x10000 "$HOME/work/bbn-m5-s3-n2k-usb/bbn-m5-s3-n2k-usb/build/bbn-m5-s3-n2k-usb.ino.bin"
+        0x0 bbn-m5-s3-n2k-usb.ino.bootloader.bin \
+        0x8000 bbn-m5-s3-n2k-usb.ino.partitions.bin \
+        0xe000 "$HOME/.arduino15/packages/esp32/hardware/esp32/3.1.2/tools/partitions/boot_app0.bin" \
+        0x10000 bbn-m5-s3-n2k-usb.ino.bin 
 
     - name: Make zip
       run: |
