@@ -110,11 +110,11 @@ void setup() {
 
   // Set Product information
   nmea2000->SetProductInformation(
-    "20230529",                 // Manufacturer's Model serial code (max 32 chars)
-    103,                        // Manufacturer's product code
+    "20230529",                   // Manufacturer's Model serial code (max 32 chars)
+    103,                          // Manufacturer's product code
     "M5AtomS3 NMEA 2000 USB GW",  // Manufacturer's Model ID (max 33 chars)
-    "0.1.0.0 (2021-03-31)",     // Manufacturer's Software version code (max 40 chars)
-    "0.0.3.1 (2021-03-07)"      // Manufacturer's Model version (max 24 chars)
+    "0.1.0.0 (2021-03-31)",       // Manufacturer's Software version code (max 40 chars)
+    "0.0.3.1 (2021-03-07)"        // Manufacturer's Model version (max 24 chars)
   );
   // Set device information
   nmea2000->SetDeviceInformation(
