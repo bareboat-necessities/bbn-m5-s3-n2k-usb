@@ -42,6 +42,7 @@ void ToggleLed() {
   } else {
     AtomS3.dis.drawpix(0x000000);
   }
+  AtomS3.update();
   led_state = !led_state;
 }
 
