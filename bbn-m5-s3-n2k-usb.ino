@@ -84,7 +84,8 @@ void PollCANStatus() {
 }
 
 void setup() {
-  M5.begin(true, false, true);
+  auto cfg = M5.config();
+  AtomS3.begin(cfg);
   // setup serial output
   Serial.begin(115200);
   delay(100);
