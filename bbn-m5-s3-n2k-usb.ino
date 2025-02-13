@@ -73,6 +73,8 @@ void setup() {
     ToggleLed();
   });
 
+  return;
+/*
   // instantiate the NMEA2000 object
   nmea2000 = new tNMEA2000_esp32(CAN_TX_PIN, CAN_RX_PIN);
 
@@ -125,6 +127,7 @@ void setup() {
     num_n2k_messages = 0;
     num_actisense_messages = 0;
   });
+*/
 }
 
 void loop() {
