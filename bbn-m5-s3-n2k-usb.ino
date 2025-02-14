@@ -58,8 +58,7 @@ void HandleStreamActisenseMsg(const tN2kMsg &message) {
 }
 
 void setup() {
-  auto cfg = M5.config();
-  AtomS3.begin(cfg);
+  AtomS3.begin(true);
   AtomS3.dis.setBrightness(100);
   // setup serial output
   Serial.begin(115200);
