@@ -88,9 +88,16 @@ void setup() {
     "0.1.0.0 (2021-03-31)",       // Manufacturer's Software version code (max 40 chars)
     "0.0.3.1 (2021-03-07)"        // Manufacturer's Model version (max 24 chars)
   );
+
+  uint8_t chipid[6];
+  uint32_t id = 0;
+  int i = 0;
+  esp_efuse_mac_get_default(chipid);
+  for (i = 0; i < 6; i++) id += (chipid[i] << (7 * i));
+  
   // Set device information
   nmea2000->SetDeviceInformation(
-    230539,  // Unique number. Use e.g. Serial number.
+    id,      // Unique number. Use e.g. Serial number.
     130,     // Device function=Analog to NMEA 2000 Gateway. See codes on
              // http://www.nmea.org/Assets/20120726%20nmea%202000%20class%20&%20function%20codes%20v%202.00.pdf
     25,      // Device class=Inter/Intranetwork Device. See codes on
