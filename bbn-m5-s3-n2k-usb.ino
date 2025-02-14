@@ -10,6 +10,7 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include <ReactESP.h>
+#include <esp_mac.h>
 
 #define ESP32_CAN_TX_PIN gpio_num_t(5)  // Set CAN TX port to 5 for M5ATOM CANBUS
 #define ESP32_CAN_RX_PIN gpio_num_t(6)  // Set CAN RX port to 6 for M5ATOM CANBUS
