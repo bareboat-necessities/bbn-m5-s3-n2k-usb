@@ -7,12 +7,9 @@
 // Based on: https://github.com/hatlabs/SH-ESP32-nmea2000-gateway/
 
 #include <M5AtomS3.h>
-#include <driver/twai.h>
-
-#define ARDUINO_USB_CDC_ON_BOOT 1
-
 #include <Arduino.h>
 #include <Wire.h>
+#include <ReactESP.h>
 
 #define ESP32_CAN_TX_PIN gpio_num_t(5)  // Set CAN TX port to 5 for M5ATOM CANBUS
 #define ESP32_CAN_RX_PIN gpio_num_t(6)  // Set CAN RX port to 6 for M5ATOM CANBUS
@@ -22,7 +19,6 @@
 
 #include <ActisenseReader.h>
 #include "NMEA2000_esp32.h"
-#include <ReactESP.h>
 
 using namespace reactesp;
 
