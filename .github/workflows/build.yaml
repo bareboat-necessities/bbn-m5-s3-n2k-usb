@@ -44,7 +44,7 @@ jobs:
         --flash_mode dio --flash_freq 80m --flash_size 4MB 
         0x0 "$HOME/work/bbn-m5-s3-n2k-usb/bbn-m5-s3-n2k-usb/build/bbn-m5-s3-n2k-usb.ino.bootloader.bin" 
         0x8000 "$HOME/work/bbn-m5-s3-n2k-usb/bbn-m5-s3-n2k-usb/build/bbn-m5-s3-n2k-usb.ino.partitions.bin" 
-        0xe000 "$HOME/.arduino15/packages/esp32/hardware/esp32/3.1.2/tools/partitions/boot_app0.bin" 
+        0xe000 "$HOME/.arduino15/packages/esp32/hardware/esp32/3.1.1/tools/partitions/boot_app0.bin" 
         0x10000 "$HOME/work/bbn-m5-s3-n2k-usb/bbn-m5-s3-n2k-usb/build/bbn-m5-s3-n2k-usb.ino.bin"
 
     - name: Make zip
