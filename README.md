@@ -40,7 +40,7 @@ To register gateway in SignalK
 ````
 wget https://raw.githubusercontent.com/bareboat-necessities/my-bareboat/refs/heads/master/m5stack-tools/bbn-flash-m5-s3-n2k-usb.sh
 chmod +x bbn-flash-m5-s3-n2k-usb.sh
-./bbn-flash-s3-m5-n2k-usb.sh -p /dev/ttyACM1
+./bbn-flash-m5-s3-n2k-usb.sh -p /dev/ttyACM1
 ````
 
 ## Troubleshooting
