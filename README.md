@@ -43,6 +43,13 @@ chmod +x bbn-flash-m5-s3-n2k-usb.sh
 ./bbn-flash-m5-s3-n2k-usb.sh -p /dev/ttyACM1
 ````
 
+## Picture
+
+<p align="center">
+<img src="./nmea2000_to_usb_atomS3.jpg?raw=true" alt="BBN NMEA 2000 to USB gateway on atomS3" />
+</p>
+
+
 ## Troubleshooting
 
 - Normal working behavior is fast flashing blue status light indicating traffic passed.
