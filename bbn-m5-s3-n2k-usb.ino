@@ -132,6 +132,6 @@ void setup() {
 }
 
 void loop() {
-  AtomS3.update();
+  M5.update();
   app.tick();
 }
