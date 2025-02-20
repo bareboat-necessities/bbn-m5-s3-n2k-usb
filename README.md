@@ -7,7 +7,7 @@ Powered by USB. CanBus isolated. (Connect H and L only)
 
 
 <p align="center">
-<img src="./mages/M5_AtomS3_lite-NMEA2000-to-USB.jpg?raw=true" alt="BBN NMEA-2000 to USB Gateway" style="width: 50%; height: auto;" />
+<img src="./images/M5_AtomS3_lite-NMEA2000-to-USB.jpg?raw=true" alt="BBN NMEA-2000 to USB Gateway" style="width: 50%; height: auto;" />
 </p>
 
 
