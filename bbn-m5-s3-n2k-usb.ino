@@ -35,9 +35,9 @@ static bool led_state = false;
 
 void ToggleLed() {
   if (led_state) {
-    M5.Display.drawpix(0, 0x0000ff);
+    M5.Display.drawPixel(0, 0x0000ff);
   } else {
-    M5.Display.drawpix(0, 0x000000);
+    M5.Display.drawPixel(0, 0x000000);
   }
   M5.update();
   led_state = !led_state;
