@@ -10,6 +10,11 @@ Powered by USB. CanBus isolated. (Connect H and L only)
 <img src="./images/M5_AtomS3_lite-NMEA2000-to-USB.jpg?raw=true" alt="BBN NMEA-2000 to USB Gateway" style="width: 50%; height: auto;" />
 </p>
 
+<p align="center">
+<img src="./images/BBN_NMEA2000_to_USB.jpg?raw=true" alt="M5 AtomS3-Lite NMEA-2000 to USB Gateway" style="width: 30%; height: auto;" />
+
+<img src="./images/BBN-heave-sensor-enclosure.jpg?raw=true" alt="ESP32 NMEA-2000 to USB Gateway" style="width: 30%; height: auto;" />
+</p>
 
 ## Required Hardware:
 
