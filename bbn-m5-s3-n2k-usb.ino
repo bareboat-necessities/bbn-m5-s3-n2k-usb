@@ -8,6 +8,7 @@
 
 #include <Arduino.h>
 #include <Wire.h>
+#include <M5AtomDisplay.h>
 #include <M5Unified.h>
 #include <ReactESP.h>
 #include <esp_mac.h>
