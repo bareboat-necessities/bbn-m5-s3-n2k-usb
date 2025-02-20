@@ -44,7 +44,7 @@ sudo systemctl stop signalk
 if [ -f bbn-flash-m5-s3-n2k-usb.sh ]; then rm bbn-flash-m5-s3-n2k-usb.sh; fi
 wget https://raw.githubusercontent.com/bareboat-necessities/my-bareboat/refs/heads/master/m5stack-tools/bbn-flash-m5-s3-n2k-usb.sh
 chmod +x bbn-flash-m5-s3-n2k-usb.sh
-./bbn-flash-m5-s3-n2k-usb.sh -p /dev/ttyACM1
+./bbn-flash-m5-s3-n2k-usb.sh -p /dev/ttyACM0
 ````
 
 ## Picture
