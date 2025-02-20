@@ -6,10 +6,9 @@
 
 // Based on: https://github.com/hatlabs/SH-ESP32-nmea2000-gateway/
 
+#include <M5AtomS3.h>
 #include <Arduino.h>
 #include <Wire.h>
-#include <M5AtomDisplay.h>
-#include <M5Unified.h>
 #include <ReactESP.h>
 #include <esp_mac.h>
 
@@ -36,11 +35,11 @@ static bool led_state = false;
 
 void ToggleLed() {
   if (led_state) {
-    M5.Display.drawPixel(0, 0x0000ff);
+    AtomS3.dis.drawpix(0x0000ff);
   } else {
-    M5.Display.drawPixel(0, 0x000000);
+    AtomS3.dis.drawpix(0x000000);
   }
-  M5.update();
+  AtomS3.update();
   led_state = !led_state;
 }
 
@@ -60,8 +59,8 @@ void HandleStreamActisenseMsg(const tN2kMsg &message) {
 }
 
 void setup() {
-  auto cfg = M5.config();
-  M5.begin(cfg);
+  AtomS3.begin(true);
+  AtomS3.dis.setBrightness(100);
 
   // setup serial output
   Serial.begin(115200);
@@ -134,6 +133,6 @@ void setup() {
 }
 
 void loop() {
-  M5.update();
+  AtomS3.update();
   app.tick();
 }
