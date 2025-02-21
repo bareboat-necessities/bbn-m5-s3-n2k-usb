@@ -75,4 +75,8 @@ NMEA2000_esp32 forked from https://github.com/ttlappalainen/NMEA2000_esp32
 with mod for TWAI driver (for esp32-S3)
 https://github.com/skarlsson/NMEA2000_twai
 
+## Alt versions
 
+For m5stack atom-lite use: 
+
+https://github.com/bareboat-necessities/bbn-nmea200-m5atom/tree/main/bbn-nmea2000-usb-gw-m5atom
