@@ -1,5 +1,5 @@
 
-# DIY NMEA N2K to USB gateway in Actisense format on M5AtomS3
+# DIY NMEA N2K to USB gateway in Actisense format on M5AtomS3 Lite
 
 Effectively equivalent of NGT-1.
 
