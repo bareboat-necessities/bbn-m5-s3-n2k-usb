@@ -80,3 +80,15 @@ https://github.com/skarlsson/NMEA2000_twai
 For m5stack atom-lite use: 
 
 https://github.com/bareboat-necessities/bbn-nmea200-m5atom/tree/main/bbn-nmea2000-usb-gw-m5atom
+
+## Other Bareboat Necessities Devices
+
+Project Home:  https://bareboat-necessities.github.io/
+
+- Alarms Box: https://github.com/bareboat-necessities/bbn_alarms_A
+- Engine Sensors Box: https://github.com/bareboat-necessities/bbn_sensors_hub_C
+- Sensors Hub: https://github.com/bareboat-necessities/bbn_sensors_hub_AB
+- NMEA N2K to USB: https://github.com/bareboat-necessities/bbn-m5-s3-n2k-usb
+- Instruments Displays on esp32: https://github.com/bareboat-necessities/bbn-m5stack-tough
+- Boat Heave Sensor: https://github.com/bareboat-necessities/bbn-wave-period-esp32
+- I2C over USB for Linux: https://github.com/bareboat-necessities/bbn-i2c-over-usb
