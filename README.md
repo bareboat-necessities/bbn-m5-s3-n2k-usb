@@ -38,6 +38,8 @@ Brand: FOWIUNYE
 
 https://www.amazon.com/Connector-Waterproof-UnShielded-Electrical-Receptacle/dp/B0CB6SCTJ1
 
+M3 Standoffs
+
 ## Setup in SignalK
 
 To register gateway in SignalK
