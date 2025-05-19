@@ -45,7 +45,7 @@ M3 Standoffs
 To register gateway in SignalK
 
 - Connect to USB 2.0 port on pi (I had drops of N2K data stream when connected to USB 3.0 on external hub)
-- find out /dev/tty* USB device of gateway (in your raspberry pi with BBN OS or other Linux)
+- find out /dev/tty* USB device of gateway (in your raspberry pi with BBN OS or other Linux). Use a symbolic link to it under /dev/serial/by-id/ when adding a SignalK connection in the next step.
 - and add N2K connection with Source Type (Actisense AGT-1 Canboat-js) baud rate: 115200
 
 ## Flashing firmware on Bareboat Necessities OS
